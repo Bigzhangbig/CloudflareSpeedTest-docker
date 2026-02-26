@@ -6,6 +6,9 @@
 [![GitHub Star](https://img.shields.io/github/stars/XIU2/CloudflareSpeedTest.svg?style=flat-square&label=Star&color=00ADD8&logo=github)](https://github.com/XIU2/CloudflareSpeedTest/)
 [![GitHub Fork](https://img.shields.io/github/forks/XIU2/CloudflareSpeedTest.svg?style=flat-square&label=Fork&color=00ADD8&logo=github)](https://github.com/XIU2/CloudflareSpeedTest/)
 
+> [!IMPORTANT]
+> 📌 本仓库（Docker 版）的改动说明、变更记录和用法请看：**[仓库修改说明](docs/REPO_MODS.md)**
+
 国外很多网站都在使用 Cloudflare CDN，但分配给中国内地访客的 IP 并不友好（延迟高、丢包多、速度慢）。  
 虽然 Cloudflare 公开了所有 [IP 段](https://www.cloudflare.com/zh-cn/ips/) ，但想要在这么多 IP 中找到适合自己的，怕是要累死，于是就有了这个软件。
 
@@ -22,6 +25,12 @@
 
 ****
 ## \# 快速使用
+
+### Docker / Podman / Compose
+
+Docker / Podman / Compose（含 `.env`、Gist 上传、Compose 传参、版本号同步）请查看：
+
+- [仓库修改说明（完整用法）](docs/REPO_MODS.md)
 
 ### 下载运行
 

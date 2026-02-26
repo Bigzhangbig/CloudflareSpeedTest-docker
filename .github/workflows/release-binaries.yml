@@ -1,0 +1,202 @@
+name: Release Binaries
+
+on:
+  release:
+    types:
+      - published
+
+jobs:
+  build_binaries:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            goarm: ""
+            archive: tar.gz
+            binary_name: cfst
+          - goos: linux
+            goarch: arm64
+            goarm: ""
+            archive: tar.gz
+            binary_name: cfst
+          - goos: linux
+            goarch: 386
+            goarm: ""
+            archive: tar.gz
+            binary_name: cfst
+          - goos: linux
+            goarch: arm
+            goarm: "6"
+            archive: tar.gz
+            binary_name: cfst
+          - goos: linux
+            goarch: arm
+            goarm: "7"
+            archive: tar.gz
+            binary_name: cfst
+          - goos: windows
+            goarch: amd64
+            goarm: ""
+            archive: zip
+            binary_name: cfst.exe
+          - goos: windows
+            goarch: 386
+            goarm: ""
+            archive: zip
+            binary_name: cfst.exe
+          - goos: darwin
+            goarch: amd64
+            goarm: ""
+            archive: tar.gz
+            binary_name: cfst
+          - goos: darwin
+            goarch: arm64
+            goarm: ""
+            archive: tar.gz
+            binary_name: cfst
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.x
+
+      - name: Build and package
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          VERSION="${GITHUB_REF_NAME}"
+          GOOS="${{ matrix.goos }}"
+          GOARCH="${{ matrix.goarch }}"
+          GOARM="${{ matrix.goarm }}"
+          ARCHIVE="${{ matrix.archive }}"
+          BINARY_NAME="${{ matrix.binary_name }}"
+
+          ARM_SUFFIX=""
+          if [ "$GOARCH" = "arm" ] && [ -n "$GOARM" ]; then
+            ARM_SUFFIX="v$GOARM"
+          fi
+
+          ASSET_BASENAME="cfst_${GOOS}_${GOARCH}${ARM_SUFFIX}"
+          BUILD_DIR="build/${ASSET_BASENAME}"
+          mkdir -p "$BUILD_DIR"
+
+          export CGO_ENABLED=0
+          export GOOS
+          export GOARCH
+          if [ -n "$GOARM" ]; then
+            export GOARM
+          fi
+
+          go build -trimpath -ldflags "-s -w -X main.version=${VERSION}" -o "$BUILD_DIR/$BINARY_NAME" .
+
+          cp ip.txt "$BUILD_DIR/ip.txt"
+          cp ipv6.txt "$BUILD_DIR/ipv6.txt"
+          cp -r script "$BUILD_DIR/script"
+
+          mkdir -p dist
+          if [ "$ARCHIVE" = "zip" ]; then
+            ASSET_NAME="${ASSET_BASENAME}.zip"
+            (
+              cd "$BUILD_DIR"
+              zip -r "../../dist/${ASSET_NAME}" .
+            )
+          else
+            ASSET_NAME="${ASSET_BASENAME}.tar.gz"
+            tar -C "$BUILD_DIR" -czf "dist/${ASSET_NAME}" .
+          fi
+
+          echo "Built ${ASSET_NAME}"
+
+      - name: Upload packaged artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goarm }}
+          path: dist/*
+          if-no-files-found: error
+
+  publish_assets:
+    runs-on: ubuntu-latest
+    needs: build_binaries
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Generate checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd dist
+          sha256sum cfst_* > checksums.txt
+
+      - name: Import GPG private key
+        shell: bash
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${GPG_PRIVATE_KEY}" ] || [ -z "${GPG_PASSPHRASE}" ]; then
+            echo "Missing required secrets: GPG_PRIVATE_KEY or GPG_PASSPHRASE"
+            exit 1
+          fi
+
+          export GNUPGHOME="$(mktemp -d)"
+          chmod 700 "$GNUPGHOME"
+
+          printf '%s' "$GPG_PRIVATE_KEY" | gpg --batch --import
+
+          GPG_KEY_ID=$(gpg --batch --list-secret-keys --keyid-format=long | awk '/^sec/{print $2}' | awk -F'/' '{print $2}' | head -n 1)
+          if [ -z "$GPG_KEY_ID" ]; then
+            echo "Failed to resolve GPG key id from imported private key"
+            exit 1
+          fi
+
+          echo "GPG_KEY_ID=$GPG_KEY_ID" >> "$GITHUB_ENV"
+          echo "GNUPGHOME=$GNUPGHOME" >> "$GITHUB_ENV"
+
+      - name: Sign checksums with GPG
+        shell: bash
+        env:
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          cd dist
+
+          gpg --batch --yes --pinentry-mode loopback \
+            --passphrase "$GPG_PASSPHRASE" \
+            --local-user "$GPG_KEY_ID" \
+            --output checksums.txt.sig \
+            --detach-sign checksums.txt
+
+          gpg --batch --yes --pinentry-mode loopback \
+            --passphrase "$GPG_PASSPHRASE" \
+            --local-user "$GPG_KEY_ID" \
+            --armor --output checksums.txt.asc \
+            --detach-sign checksums.txt
+
+      - name: Upload binaries to release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: |
+            dist/cfst_*
+            dist/checksums.txt
+            dist/checksums.txt.sig
+            dist/checksums.txt.asc

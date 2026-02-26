@@ -9,6 +9,9 @@ on:
       - 'LICENSE'
       - '.gitattributes'
       - '.gitignore'
+  release:
+    types:
+      - published
 
 jobs:
   build_and_push:
@@ -54,22 +57,26 @@ jobs:
         # Get latest release tag from upstream repository to derive base version for Docker image
         LAST_RELEASE_TAG=$(git ls-remote --tags https://github.com/XIU2/CloudflareSpeedTest.git | awk -F/ '{print $3}' | grep -v '\^{}' | sort -V | tail -n 1 || echo "v0.0.0")
         echo "LAST_RELEASE_TAG=$LAST_RELEASE_TAG" >> $GITHUB_ENV
-        
-        # Increment build number based on current CI run ID or simple counter
-        BUILD_NUMBER=${{ github.run_number }}
-        echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
-        
-        # Construct Docker image version: vX.X.X-YY (where X.X.X from last release, YY is build number)
-        # Assuming main.version is like v1.2.3, we take v1.2.3-BUILD_NUMBER
-        DOCKER_IMAGE_VERSION=$(echo "$LAST_RELEASE_TAG" | sed 's/^v//')-${{ github.run_number }}
-        echo "DOCKER_IMAGE_VERSION=$DOCKER_IMAGE_VERSION" >> $GITHUB_ENV
-        
+
         # Convert repo name to lowercase for Docker tag
         REPO_LOWER="${GITHUB_REPOSITORY,,}"
-        
-        # Set output for image tag
-        echo "IMAGE_TAG=ghcr.io/${REPO_LOWER}:${DOCKER_IMAGE_VERSION}" >> $GITHUB_OUTPUT
-        echo "LATEST_TAG=ghcr.io/${REPO_LOWER}:latest" >> $GITHUB_OUTPUT
+
+        if [ "${GITHUB_EVENT_NAME}" = "release" ]; then
+          RELEASE_TAG="${{ github.event.release.tag_name }}"
+          if [ -z "$RELEASE_TAG" ]; then
+            RELEASE_TAG="$LAST_RELEASE_TAG"
+          fi
+
+          DOCKER_IMAGE_VERSION=$(echo "$RELEASE_TAG" | sed 's/^v//')
+          echo "APP_VERSION=$RELEASE_TAG" >> $GITHUB_ENV
+          echo "IMAGE_TAG=ghcr.io/${REPO_LOWER}:${DOCKER_IMAGE_VERSION}" >> $GITHUB_OUTPUT
+          echo "CHANNEL_TAG=ghcr.io/${REPO_LOWER}:latest" >> $GITHUB_OUTPUT
+        else
+          DOCKER_IMAGE_VERSION=$(echo "$LAST_RELEASE_TAG" | sed 's/^v//')-pre.${{ github.run_number }}
+          echo "APP_VERSION=$LAST_RELEASE_TAG" >> $GITHUB_ENV
+          echo "IMAGE_TAG=ghcr.io/${REPO_LOWER}:${DOCKER_IMAGE_VERSION}" >> $GITHUB_OUTPUT
+          echo "CHANNEL_TAG=ghcr.io/${REPO_LOWER}:pre" >> $GITHUB_OUTPUT
+        fi
 
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
@@ -79,8 +86,8 @@ jobs:
         platforms: ${{ env.PLATFORMS }}
         tags: |
           ${{ steps.get_version.outputs.IMAGE_TAG }}
-          ${{ steps.get_version.outputs.LATEST_TAG }}
+          ${{ steps.get_version.outputs.CHANNEL_TAG }}
         build-args: |
-          VERSION=${{ env.LAST_RELEASE_TAG }}
+          VERSION=${{ env.APP_VERSION }}
         cache-from: type=gha
         cache-to: type=gha,mode=max

@@ -36,12 +36,21 @@ RUN GOARM=""; \
 # Stage 2: Runner
 FROM --platform=$TARGETPLATFORM alpine:latest
 
-LABEL org.opencontainers.image.source="https://github.com/Bigzhangbig/CloudflareSpeedTest-docker"
+LABEL org.opencontainers.image.title="CloudflareSpeedTest Docker" \
+	org.opencontainers.image.description="CloudflareSpeedTest CLI container for testing CDN IP latency and download speed. Usage: docker run --rm ghcr.io/bigzhangbig/cloudflarespeedtest-docker:latest -n 200" \
+	org.opencontainers.image.source="https://github.com/Bigzhangbig/CloudflareSpeedTest-docker" \
+	org.opencontainers.image.url="https://github.com/Bigzhangbig/CloudflareSpeedTest-docker" \
+	org.opencontainers.image.documentation="https://github.com/Bigzhangbig/CloudflareSpeedTest-docker#readme" \
+	org.opencontainers.image.licenses="GPL-3.0"
 
 WORKDIR /app
 
+RUN apk add --no-cache ca-certificates curl jq
+
 # Copy the compiled binary from the builder stage
 COPY --from=builder /app/cfst .
+COPY docker-entrypoint.sh .
+RUN chmod +x /app/docker-entrypoint.sh
 
 # Copy IP files
 COPY ip.txt .
@@ -53,7 +62,7 @@ COPY ipv6.txt .
 # For now, let's assume it runs as a CLI, so no EXPOSE needed unless specified later for heartbeat.
 
 # Define entrypoint to run the application
-ENTRYPOINT ["./cfst"]
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
 
 # Default command (can be overridden)
-CMD ["-h"]
+CMD ["-dn", "20", "-sl", "0.01"]
