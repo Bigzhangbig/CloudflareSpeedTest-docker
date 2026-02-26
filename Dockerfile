@@ -37,7 +37,7 @@ RUN GOARM=""; \
 FROM --platform=$TARGETPLATFORM alpine:latest
 
 LABEL org.opencontainers.image.title="CloudflareSpeedTest Docker" \
-	org.opencontainers.image.description="CloudflareSpeedTest CLI container for testing CDN IP latency and download speed. Usage: docker run --rm ghcr.io/bigzhangbig/cloudflarespeedtest-docker:latest -n 200" \
+	org.opencontainers.image.description="CloudflareSpeedTest CLI container for latency/download testing with optional Gist upload support. Usage: docker run --rm ghcr.io/bigzhangbig/cloudflarespeedtest-docker:latest -n 200" \
 	org.opencontainers.image.source="https://github.com/Bigzhangbig/CloudflareSpeedTest-docker" \
 	org.opencontainers.image.url="https://github.com/Bigzhangbig/CloudflareSpeedTest-docker" \
 	org.opencontainers.image.documentation="https://github.com/Bigzhangbig/CloudflareSpeedTest-docker#readme" \

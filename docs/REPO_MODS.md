@@ -11,10 +11,21 @@
 
 本仓库在保持 `CloudflareSpeedTest` 核心测速能力的前提下，增加了 Docker 化能力与 CI 自动构建发布能力，主要包括：
 
+- 控制台输出方式改造（进度刷新与日志展示方式调整）
 - Docker 多架构构建（以 Alpine 支持架构为主）
 - GitHub Actions 自动构建并推送 GHCR 镜像
 - 容器元数据（OCI Labels）补充
 - 基于 `.env` 的 Gist 上传功能（可选）
+
+## 1.1 路线图
+
+按阶段推进顺序如下：
+
+1. ✅ 控制台输出方式改造
+2. ✅ Docker 镜像构建
+3. ✅ Gist 上传
+4. 🚧 即将实现：定时测速
+5. 🔜 最后阶段：精简镜像体积
 
 ## 2. 变更记录
 
@@ -54,6 +65,9 @@
   - 提供 Gist 上传相关环境变量模板
 - 更新 `.gitignore`
   - 忽略 `.env`，防止密钥误提交
+- 调整控制台进度刷新间隔
+  - 延迟测速阶段：每 `1` 秒刷新一次进度（`task/tcping.go`）
+  - 下载测速阶段：每 `3` 秒刷新一次进度（`task/download.go`）
 
 ## 3. 用法
 
@@ -69,6 +83,9 @@
 - 触发方式：GitHub Release（`published`）
 - 资产命名：`cfst_<os>_<arch>[v6|v7].tar.gz|zip`
   - 示例：`cfst_linux_amd64.tar.gz`、`cfst_linux_armv7.tar.gz`、`cfst_windows_amd64.zip`
+- 二进制运行最低要求与上游项目保持一致
+  - 以 `XIU2/CloudflareSpeedTest` 官方发布说明为准
+  - 本仓库不单独定义或承诺额外的最低系统版本/运行环境
 - 每次发布会附带 `checksums.txt` 用于完整性校验
 - 每次发布会附带 `checksums.txt.sig` 与 `checksums.txt.asc`，用于校验签名真实性
 
