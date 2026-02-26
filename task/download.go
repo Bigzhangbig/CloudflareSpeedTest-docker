@@ -7,7 +7,7 @@ import (
 	"net"
 	"net/http"
 	"sort"
-	"strconv"
+	"sync"
 	"time"
 
 	"github.com/XIU2/CloudflareSpeedTest/utils"
@@ -66,29 +66,59 @@ func TestDownloadSpeed(ipSet utils.PingDelaySet) (speedSet utils.DownloadSpeedSe
 	}
 
 	utils.Cyan.Printf("开始下载测速（下限：%.2f MB/s, 数量：%d, 队列：%d）\n", MinSpeed, TestCount, testNum)
-	// 控制 下载测速进度条 与 延迟测速进度条 长度一致（强迫症）
-	bar_a := len(strconv.Itoa(len(ipSet)))
-	bar_b := "     "
-	for i := 0; i < bar_a; i++ {
-		bar_b += " "
-	}
-	bar := utils.NewBar(TestCount, bar_b, "")
+
+	processedDownloadCount := 0
+	var mu sync.Mutex // Mutex for processedDownloadCount
+
+	done := make(chan struct{})
+	ticker := time.NewTicker(3 * time.Second)
+	defer ticker.Stop()
+
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				mu.Lock()
+				if processedDownloadCount < testNum { // Use testNum as the total count for this phase
+					timestamp := utils.Blue.Sprintf("[%s]", time.Now().Format("2006-01-02 15:04:05"))
+					downloadTestPrefix := utils.Magenta.Sprintf("[下载测速]")
+					utils.White.Printf("%s%s\t进度: %d / %d\n", timestamp, downloadTestPrefix, processedDownloadCount, testNum)
+				}
+				mu.Unlock()
+			case <-done:
+				return
+			}
+		}
+	}()
+
 	for i := 0; i < testNum; i++ {
 		speed, colo := downloadHandler(ipSet[i].IP)
 		ipSet[i].DownloadSpeed = speed
 		if ipSet[i].Colo == "" { // 只有当 Colo 是空的时候，才写入，否则代表之前是 httping 测速并获取过了
 			ipSet[i].Colo = colo
 		}
+		// Increment processedDownloadCount safely
+		mu.Lock()
+		processedDownloadCount++
+		mu.Unlock()
+
 		// 在每个 IP 下载测速后，以 [下载速度下限] 条件过滤结果
 		if speed >= MinSpeed*1024*1024 {
-			bar.Grow(1, "")
+			// Removed individual IP logging
 			speedSet = append(speedSet, ipSet[i]) // 高于下载速度下限时，添加到新数组中
 			if len(speedSet) == TestCount {       // 凑够满足条件的 IP 时（下载测速数量 -dn），就跳出循环
 				break
 			}
 		}
 	}
-	bar.Done()
+	close(done) // Signal the progress goroutine to stop
+
+	mu.Lock()
+	timestamp := utils.Blue.Sprintf("[%s]", time.Now().Format("2006-01-02 15:04:05"))
+	downloadTestPrefix := utils.Magenta.Sprintf("[下载测速]")
+	utils.White.Printf("%s%s\t进度: %d / %d (完成)\n", timestamp, downloadTestPrefix, processedDownloadCount, testNum) // Final progress update
+	mu.Unlock()
+
 	if MinSpeed == 0.00 { // 如果没有指定下载速度下限，则直接返回所有测速数据
 		speedSet = utils.DownloadSpeedSet(ipSet)
 	} else if utils.Debug && len(speedSet) == 0 { // 如果指定了下载速度下限，且是调试模式下，且没有找到任何一个满足条件的 IP 时，返回所有测速数据，供用户查看当前的测速结果，以便适当调低预期测速条件

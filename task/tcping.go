@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net"
 	"sort"
-	"strconv"
 	"sync"
 	"time"
 
@@ -31,7 +30,8 @@ type Ping struct {
 	ips     []*net.IPAddr
 	csv     utils.PingDelaySet
 	control chan bool
-	bar     *utils.Bar
+	processedCount int
+	totalIPs int
 }
 
 func checkPingDefault() {
@@ -55,7 +55,8 @@ func NewPing() *Ping {
 		ips:     ips,
 		csv:     make(utils.PingDelaySet, 0),
 		control: make(chan bool, Routines),
-		bar:     utils.NewBar(len(ips), "可用:", ""),
+		processedCount: 0,
+		totalIPs: len(ips),
 	}
 }
 
@@ -68,13 +69,46 @@ func (p *Ping) Run() utils.PingDelaySet {
 	} else {
 		utils.Cyan.Printf("开始延迟测速（模式：TCP, 端口：%d, 范围：%v ~ %v ms, 丢包：%.2f)\n", TCPPort, utils.InputMinDelay.Milliseconds(), utils.InputMaxDelay.Milliseconds(), utils.InputMaxLossRate)
 	}
+
+	done := make(chan struct{})
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
+
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				p.m.Lock()
+				availableCount := len(p.csv)
+				processed := p.processedCount
+				total := p.totalIPs
+				p.m.Unlock()
+
+				if processed < total {
+					availableStr := utils.Green.Sprintf("%d", availableCount)
+				timestamp := utils.Blue.Sprintf("[%s]", time.Now().Format("2006-01-02 15:04:05"))
+				latencyTestPrefix := utils.Magenta.Sprintf("[延迟测速]")
+				utils.White.Printf("%s%s\t进度: %d / %d 可用: %s\n", timestamp, latencyTestPrefix, processed, total, availableStr)
+				}
+			case <-done:
+				return
+			}
+		}
+	}()
+
 	for _, ip := range p.ips {
 		p.wg.Add(1)
 		p.control <- false
 		go p.start(ip)
 	}
 	p.wg.Wait()
-	p.bar.Done()
+	close(done) // Signal the progress goroutine to stop
+
+	p.m.Lock()
+	timestamp := utils.Blue.Sprintf("[%s]", time.Now().Format("2006-01-02 15:04:05"))
+	latencyTestPrefix := utils.Magenta.Sprintf("[延迟测速]")
+	utils.White.Printf("%s%s\t进度: %d / %d 可用: %s (完成)\n", timestamp, latencyTestPrefix, p.processedCount, p.totalIPs, utils.Green.Sprintf("%d", len(p.csv))) // Final progress update
+	p.m.Unlock()
 	sort.Sort(p.csv)
 	return p.csv
 }
@@ -130,11 +164,9 @@ func (p *Ping) appendIPData(data *utils.PingData) {
 // handle tcping
 func (p *Ping) tcpingHandler(ip *net.IPAddr) {
 	recv, totalDlay, colo := p.checkConnection(ip)
-	nowAble := len(p.csv)
-	if recv != 0 {
-		nowAble++
-	}
-	p.bar.Grow(1, strconv.Itoa(nowAble))
+	p.m.Lock()
+	p.processedCount++
+	p.m.Unlock()
 	if recv == 0 {
 		return
 	}
