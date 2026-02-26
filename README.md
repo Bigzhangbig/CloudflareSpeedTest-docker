@@ -9,6 +9,9 @@
 > [!IMPORTANT]
 > 📌 本仓库（Docker 版）的改动说明、变更记录和用法请看：**[仓库修改说明](docs/REPO_MODS.md)**
 
+> [!WARNING]
+> ⚠️ 本仓库中的代码改动由 AI 生成，不提供任何正确性、稳定性、安全性或适用性保证，请自行审查与测试并自担风险。
+
 国外很多网站都在使用 Cloudflare CDN，但分配给中国内地访客的 IP 并不友好（延迟高、丢包多、速度慢）。  
 虽然 Cloudflare 公开了所有 [IP 段](https://www.cloudflare.com/zh-cn/ips/) ，但想要在这么多 IP 中找到适合自己的，怕是要累死，于是就有了这个软件。
 
