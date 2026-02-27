@@ -87,6 +87,13 @@ jobs:
         tags: |
           ${{ steps.get_version.outputs.IMAGE_TAG }}
           ${{ steps.get_version.outputs.CHANNEL_TAG }}
+        annotations: |
+          org.opencontainers.image.title=CloudflareSpeedTest Docker
+          org.opencontainers.image.description=CloudflareSpeedTest CLI container for latency/download testing.
+          org.opencontainers.image.source=https://github.com/${{ github.repository }}
+          org.opencontainers.image.url=https://github.com/${{ github.repository }}
+          org.opencontainers.image.documentation=https://github.com/${{ github.repository }}#readme
+          org.opencontainers.image.licenses=GPL-3.0
         build-args: |
           VERSION=${{ env.APP_VERSION }}
         cache-from: type=gha
