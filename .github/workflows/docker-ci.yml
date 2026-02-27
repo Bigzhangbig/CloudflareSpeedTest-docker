@@ -82,18 +82,21 @@ jobs:
       uses: docker/build-push-action@v5
       with:
         context: .
-        push: true
         platforms: ${{ env.PLATFORMS }}
-        tags: |
-          ${{ steps.get_version.outputs.IMAGE_TAG }}
-          ${{ steps.get_version.outputs.CHANNEL_TAG }}
-        annotations: |
-          org.opencontainers.image.title=CloudflareSpeedTest Docker
-          org.opencontainers.image.description=CloudflareSpeedTest CLI container for latency/download testing.
-          org.opencontainers.image.source=https://github.com/${{ github.repository }}
-          org.opencontainers.image.url=https://github.com/${{ github.repository }}
-          org.opencontainers.image.documentation=https://github.com/${{ github.repository }}#readme
-          org.opencontainers.image.licenses=GPL-3.0
+        outputs: >-
+          type=image,"name=${{ steps.get_version.outputs.IMAGE_TAG }},${{ steps.get_version.outputs.CHANNEL_TAG }}",push=true,
+          annotation-index.org.opencontainers.image.title=CloudflareSpeedTest Docker,
+          annotation-index.org.opencontainers.image.description=CloudflareSpeedTest CLI container for latency/download testing.,
+          annotation-index.org.opencontainers.image.source=https://github.com/${{ github.repository }},
+          annotation-index.org.opencontainers.image.url=https://github.com/${{ github.repository }},
+          annotation-index.org.opencontainers.image.documentation=https://github.com/${{ github.repository }}#readme,
+          annotation-index.org.opencontainers.image.licenses=GPL-3.0,
+          annotation-manifest.org.opencontainers.image.title=CloudflareSpeedTest Docker,
+          annotation-manifest.org.opencontainers.image.description=CloudflareSpeedTest CLI container for latency/download testing.,
+          annotation-manifest.org.opencontainers.image.source=https://github.com/${{ github.repository }},
+          annotation-manifest.org.opencontainers.image.url=https://github.com/${{ github.repository }},
+          annotation-manifest.org.opencontainers.image.documentation=https://github.com/${{ github.repository }}#readme,
+          annotation-manifest.org.opencontainers.image.licenses=GPL-3.0
         build-args: |
           VERSION=${{ env.APP_VERSION }}
         cache-from: type=gha
