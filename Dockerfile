@@ -37,7 +37,7 @@ RUN GOARM=""; \
 FROM --platform=$TARGETPLATFORM alpine:latest
 
 LABEL org.opencontainers.image.title="CloudflareSpeedTest Docker" \
-	org.opencontainers.image.description="CloudflareSpeedTest CLI container for latency/download testing with optional Gist upload support. Usage: docker run --rm ghcr.io/bigzhangbig/cloudflarespeedtest-docker:latest -n 200" \
+	org.opencontainers.image.description="CloudflareSpeedTest CLI container for Cloudflare IP latency and download testing. Quick start: docker run --rm ghcr.io/bigzhangbig/cloudflarespeedtest-docker:latest -n 500. Common options: -dn 20 -sl 5 -tl 200 -tp 443 -f ip.txt -o result.csv. Use --help for full flags." \
 	org.opencontainers.image.source="https://github.com/Bigzhangbig/CloudflareSpeedTest-docker" \
 	org.opencontainers.image.url="https://github.com/Bigzhangbig/CloudflareSpeedTest-docker" \
 	org.opencontainers.image.documentation="https://github.com/Bigzhangbig/CloudflareSpeedTest-docker#readme" \
@@ -45,7 +45,7 @@ LABEL org.opencontainers.image.title="CloudflareSpeedTest Docker" \
 
 WORKDIR /app
 
-RUN apk add --no-cache ca-certificates curl jq
+RUN apk add --no-cache ca-certificates curl jq tini
 
 # Copy the compiled binary from the builder stage
 COPY --from=builder /app/cfst .
@@ -62,7 +62,9 @@ COPY ipv6.txt .
 # For now, let's assume it runs as a CLI, so no EXPOSE needed unless specified later for heartbeat.
 
 # Define entrypoint to run the application
-ENTRYPOINT ["/app/docker-entrypoint.sh"]
+STOPSIGNAL SIGTERM
+
+ENTRYPOINT ["/sbin/tini", "-g", "--", "/app/docker-entrypoint.sh"]
 
 # Default command (can be overridden)
-CMD ["-dn", "20", "-sl", "0.01"]
+CMD []

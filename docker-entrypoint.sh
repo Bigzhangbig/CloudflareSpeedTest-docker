@@ -2,8 +2,32 @@
 
 set -eu
 
+child_pid=""
+
+forward_signal() {
+	sig="$1"
+	if [ -n "$child_pid" ] && kill -0 "$child_pid" 2>/dev/null; then
+		kill -s "$sig" "$child_pid" 2>/dev/null || true
+	fi
+}
+
+trap 'forward_signal TERM' TERM
+trap 'forward_signal INT' INT
+
+# Append default arguments if not provided by the user
+args="$@"
+if ! echo " $args " | grep -q -- " -dn "; then
+	args="$args -dn 20"
+fi
+if ! echo " $args " | grep -q -- " -sl "; then
+	args="$args -sl 0.01"
+fi
+
 set +e
-/app/cfst "$@"
+# shellcheck disable=SC2086
+/app/cfst $args &
+child_pid="$!"
+wait "$child_pid"
 cfst_exit=$?
 set -e
 
