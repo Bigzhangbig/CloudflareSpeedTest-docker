@@ -49,6 +49,11 @@ jobs:
             goarm: ""
             archive: zip
             binary_name: cfst.exe
+          - goos: windows
+            goarch: arm64
+            goarm: ""
+            archive: zip
+            binary_name: cfst.exe
           - goos: darwin
             goarch: amd64
             goarm: ""
@@ -101,7 +106,6 @@ jobs:
 
           cp ip.txt "$BUILD_DIR/ip.txt"
           cp ipv6.txt "$BUILD_DIR/ipv6.txt"
-          cp -r script "$BUILD_DIR/script"
 
           mkdir -p dist
           if [ "$ARCHIVE" = "zip" ]; then
