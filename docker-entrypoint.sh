@@ -42,87 +42,6 @@ is_positive_int() {
 	esac
 }
 
-upload_gist_if_needed() {
-	GIST_TOKEN_VALUE="${GIST_TOKEN:-}"
-	GIST_ID="${GIST_ID:-}"
-	if [ -z "$GIST_TOKEN_VALUE" ] || [ -z "$GIST_ID" ]; then
-		echo "[gist] GIST_TOKEN or GIST_ID is empty, skip upload."
-		return 0
-	fi
-
-	RESULT_FILE="${GIST_RESULT_FILE:-result.csv}"
-	if [ ! -f "$RESULT_FILE" ]; then
-		echo "[gist] Result file not found: $RESULT_FILE, skip upload."
-		return 0
-	fi
-
-	GIST_DESCRIPTION_VALUE="${GIST_DESCRIPTION:-}"
-	if [ -z "$GIST_DESCRIPTION_VALUE" ]; then
-		TEST_PORT=""
-		# shellcheck disable=SC2086
-		set -- $args
-		while [ "$#" -gt 0 ]; do
-			if [ "$1" = "-tp" ]; then
-				shift
-				TEST_PORT="${1:-}"
-				break
-			fi
-			shift
-		done
-		if [ -z "$TEST_PORT" ]; then
-			TEST_PORT="443"
-		fi
-		GIST_DESCRIPTION_VALUE="CloudflareSpeedTest result [tp=${TEST_PORT}] $(TZ='UTC-8' date '+%Y-%m-%d %H:%M:%S UTC+8')"
-	fi
-	GIST_DESCRIPTION="$GIST_DESCRIPTION_VALUE"
-
-	GIST_META=$(curl -fsSL \
-		-H "Accept: application/vnd.github+json" \
-		-H "Authorization: Bearer $GIST_TOKEN_VALUE" \
-		-H "X-GitHub-Api-Version: 2022-11-28" \
-		"https://api.github.com/gists/$GIST_ID" 2>/dev/null || echo '{}')
-
-	GIST_FILENAME="${GIST_FILENAME:-}"
-	if [ -z "$GIST_FILENAME" ]; then
-		GIST_FILENAME=$(echo "$GIST_META" | jq -r '.files | keys[0] // "result.csv"')
-	fi
-
-	PAYLOAD=$(jq -n \
-		--arg filename "$GIST_FILENAME" \
-		--arg description "$GIST_DESCRIPTION" \
-		--arg content "$(cat "$RESULT_FILE")" \
-		--argjson existing "$GIST_META" \
-		'{
-			description: $description,
-			files: (
-				((($existing.files // {}) | to_entries | map(if .key == $filename then empty else {key: .key, value: null} end) | from_entries)
-				+ {($filename): {content: $content}}
-				)
-			)
-		}')
-
-	UPLOAD_URL="https://api.github.com/gists/$GIST_ID"
-	UPLOAD_METHOD="PATCH"
-
-	RESPONSE=$(curl -fsSL -X "$UPLOAD_METHOD" \
-		-H "Accept: application/vnd.github+json" \
-		-H "Authorization: Bearer $GIST_TOKEN_VALUE" \
-		-H "X-GitHub-Api-Version: 2022-11-28" \
-		"$UPLOAD_URL" \
-		-d "$PAYLOAD") || {
-		echo "[gist] Upload failed."
-		return 0
-	}
-
-	GIST_URL=$(echo "$RESPONSE" | jq -r '.html_url // empty')
-	if [ -n "$GIST_URL" ]; then
-		echo "[gist] Upload success: $GIST_URL"
-	else
-		echo "[gist] Upload finished, but no html_url returned."
-	fi
-	return 0
-}
-
 run_once() {
 	set +e
 	# shellcheck disable=SC2086
@@ -138,7 +57,6 @@ run_once() {
 		return "$cfst_exit"
 	fi
 
-	upload_gist_if_needed
 	return 0
 }
 
