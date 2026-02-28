@@ -140,6 +140,10 @@ func main() {
 	// 开始下载测速
 	speedData := task.TestDownloadSpeed(pingData)
 	utils.ExportCsv(speedData) // 输出文件
+	
+	// 如果设置了环境变量，则尝试上传 Gist
+	utils.UploadGistIfNeeded(utils.Output, fmt.Sprintf("%d", task.TCPPort))
+
 	speedData.Print()          // 打印结果
 	endPrint()                 // 根据情况选择退出方式（针对 Windows）
 }
