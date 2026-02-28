@@ -24,8 +24,9 @@
 1. ✅ 控制台输出方式改造
 2. ✅ Docker 镜像构建
 3. ✅ Gist 上传
-4. 🚧 即将实现：定时测速
-5. 🔜 最后阶段：精简镜像体积
+4. ✅ 定时测速（容器循环执行）
+5. 🔜 倒数第二阶段：精简镜像体积
+6. 🔜 最后阶段：健康监测
 
 ## 2. 变更记录
 
@@ -61,6 +62,7 @@
 - 新增 `docker-entrypoint.sh`
   - 先执行 `cfst`
   - 若用户未显式传参，会追加默认参数：`-n 50 -httping -dn 20 -sl 0.01`
+  - 支持通过环境变量启用定时循环测速（`CFST_LOOP_HOURS=<小时>`）
   - 成功后可按 `.env` 配置将 `result.csv` 上传到 GitHub Gist
 - 新增 `.env.example`
   - 提供 Gist 上传相关环境变量模板
@@ -194,6 +196,19 @@ podman compose run --rm cfst -- -n 200 -url https://cfspeedtest.freenode.indevs.
 
 默认行为：每次上传会覆盖同一个 Gist 文件内容，并清理该 Gist 中其他旧文件。
 
+## 3.2.1 启用定时循环测速（可选）
+
+在 `.env` 中设置：
+
+```dotenv
+CFST_LOOP_HOURS=1
+```
+
+- `CFST_LOOP_HOURS`
+  - 循环间隔小时数（正整数）；留空表示仅执行一次（默认）
+
+启用后容器会按固定间隔重复执行测速流程；每轮成功后会按现有规则尝试上传 Gist。
+
 ## 3.3 常用环境变量说明
 
 - `GIST_TOKEN`
@@ -207,6 +222,8 @@ podman compose run --rm cfst -- -n 200 -url https://cfspeedtest.freenode.indevs.
   - 其中 `<实际测试端口>` 取本次运行参数 `-tp`；若未传则使用默认端口 `443`
 - `GIST_RESULT_FILE`
   - 上传文件路径，默认 `result.csv`
+- `CFST_LOOP_HOURS`
+  - 循环间隔小时数（正整数）；留空表示不循环
 
 ## 3.4 版本号同步说明
 
