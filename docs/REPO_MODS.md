@@ -60,6 +60,7 @@
   - 使用 `docker-entrypoint.sh` 作为容器入口
 - 新增 `docker-entrypoint.sh`
   - 先执行 `cfst`
+  - 若用户未显式传参，会追加默认参数：`-n 50 -httping -dn 20 -sl 0.01`
   - 成功后可按 `.env` 配置将 `result.csv` 上传到 GitHub Gist
 - 新增 `.env.example`
   - 提供 Gist 上传相关环境变量模板
@@ -202,7 +203,8 @@ podman compose run --rm cfst -- -n 200 -url https://cfspeedtest.freenode.indevs.
 - `GIST_FILENAME`
   - 上传到 Gist 的文件名，默认 `result.csv`
 - `GIST_DESCRIPTION`
-  - Gist 描述信息；为空时默认 `UTC+8` 时间戳
+  - Gist 描述信息；为空时自动生成为 `CloudflareSpeedTest result [tp=<实际测试端口>] <UTC+8 时间戳>`
+  - 其中 `<实际测试端口>` 取本次运行参数 `-tp`；若未传则使用默认端口 `443`
 - `GIST_RESULT_FILE`
   - 上传文件路径，默认 `result.csv`
 

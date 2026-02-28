@@ -16,6 +16,12 @@ trap 'forward_signal INT' INT
 
 # Append default arguments if not provided by the user
 args="$@"
+if ! echo " $args " | grep -q -- " -n "; then
+	args="$args -n 50"
+fi
+if ! echo " $args " | grep -q -- " -httping"; then
+	args="$args -httping"
+fi
 if ! echo " $args " | grep -q -- " -dn "; then
 	args="$args -dn 20"
 fi
@@ -49,7 +55,25 @@ if [ ! -f "$RESULT_FILE" ]; then
 	exit 0
 fi
 
-GIST_DESCRIPTION="${GIST_DESCRIPTION:-CloudflareSpeedTest result $(TZ='UTC-8' date '+%Y-%m-%d %H:%M:%S UTC+8')}"
+GIST_DESCRIPTION_VALUE="${GIST_DESCRIPTION:-}"
+if [ -z "$GIST_DESCRIPTION_VALUE" ]; then
+	TEST_PORT=""
+	# shellcheck disable=SC2086
+	set -- $args
+	while [ "$#" -gt 0 ]; do
+		if [ "$1" = "-tp" ]; then
+			shift
+			TEST_PORT="${1:-}"
+			break
+		fi
+		shift
+	done
+	if [ -z "$TEST_PORT" ]; then
+		TEST_PORT="443"
+	fi
+	GIST_DESCRIPTION_VALUE="CloudflareSpeedTest result [tp=${TEST_PORT}] $(TZ='UTC-8' date '+%Y-%m-%d %H:%M:%S UTC+8')"
+fi
+GIST_DESCRIPTION="$GIST_DESCRIPTION_VALUE"
 
 GIST_META=$(curl -fsSL \
 	-H "Accept: application/vnd.github+json" \
