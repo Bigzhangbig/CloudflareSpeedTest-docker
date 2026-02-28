@@ -1,0 +1,10 @@
+.git
+.github
+docs
+output
+script
+.env
+.env.*
+compose.yml
+README.md
+LICENSE

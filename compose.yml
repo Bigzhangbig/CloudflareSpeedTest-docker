@@ -1,0 +1,20 @@
+services:
+  cfst:
+    image: ghcr.io/bigzhangbig/cloudflarespeedtest-docker:latest
+    container_name: cfst
+    env_file:
+      - .env
+    volumes:
+      - ./output:/app/output
+    command:
+      - -n
+      - "50"
+      - -httping
+      - -tl
+      - "1000"
+      - -sl
+      - "0.01"
+      - -url
+      - https://cdn.freenode.indevs.in/400M
+      - -o
+      - /app/output/result.csv
