@@ -35,6 +35,15 @@ Docker / Podman / Compose（含 `.env`、Gist 上传、Compose 传参、版本�
 
 - [仓库修改说明（完整用法）](docs/REPO_MODS.md)
 
+#### 环境变量说明 (Docker 专属)
+通过环境变量可以灵活切换测速模式：
+- `SCAN_TYPE`: 测速模式。可选值：`ipv4` (默认), `ipv6`, `both` (同时测速 IPv4 和 IPv6)。
+- `CFST_TP`: 指定测速端口。默认 `ipv4/both` 为 `443`，`ipv6` 为 `8443`。
+- `CFST_LOOP_HOURS`: 循环测速间隔（小时）。为空则仅运行一次。
+- `GIST_TOKEN` / `GIST_ID`: GitHub Gist 同步配置。
+
+示例：`docker run -e SCAN_TYPE=ipv6 ghcr.io/bigzhangbig/cloudflarespeedtest-docker`
+
 ### 下载运行
 
 1. 下载编译好的可执行文件（ [Github Releases](https://github.com/XIU2/CloudflareSpeedTest/releases) / [蓝奏云](https://xiu.lanzoub.com/b0742hkxe) ）并解压。  

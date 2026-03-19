@@ -20,6 +20,31 @@ trap 'forward_signal INT' INT
 
 # Append default arguments if not provided by the user
 args="$@"
+
+# Dynamic IP file and Port based on SCAN_TYPE
+SCAN_TYPE="${SCAN_TYPE:-ipv4}"
+CFST_TP="${CFST_TP:-}"
+
+if ! echo " $args " | grep -q -- " -f "; then
+	case "$SCAN_TYPE" in
+		ipv6)
+			args="$args -f ipv6.txt"
+			if [ -z "$CFST_TP" ]; then CFST_TP="8443"; fi
+			;;
+		both)
+			cat ip.txt ipv6.txt > all_ips.txt
+			args="$args -f all_ips.txt"
+			;;
+		*)
+			args="$args -f ip.txt"
+			;;
+	esac
+fi
+
+if [ -n "$CFST_TP" ] && ! echo " $args " | grep -q -- " -tp "; then
+	args="$args -tp $CFST_TP"
+fi
+
 if ! echo " $args " | grep -q -- " -n "; then
 	args="$args -n 50"
 fi
