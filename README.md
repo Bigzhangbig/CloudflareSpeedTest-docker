@@ -66,11 +66,13 @@ scoop install dorado/cloudflare-speedtest
 </details>
 
 <details>
-<summary><code><strong>「 点击查看 Linux 系统下的使用示例 」</strong></code></summary>
+<summary><code><strong>「 点击查看 Linux / MAC 系统下的使用示例 」</strong></code></summary>
 
 ****
 
 以下命令仅为示例，版本号和文件名请前往 [**Releases**](https://github.com/XIU2/CloudflareSpeedTest/releases) 查看。
+
+> MAC 下 CFST 的安装和使用方式是一样的，不过 MAC 可以通过其他方式来下载解压（也就是可以跳过下面的前几个步骤），但运行的话还是需要在终端中运行（注意别忘了 **赋予执行权限**）。
 
 ``` yaml
 # 如果是第一次使用，则建议创建新文件夹（后续更新时，跳过该步骤）
@@ -79,15 +81,16 @@ mkdir cfst
 # 进入文件夹（后续更新，只需要从这里重复下面的下载、解压命令即可）
 cd cfst
 
-# 下载 CFST 压缩包（自行根据需求替换 URL 中 [版本号] 和 [文件名]）
-wget -N https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.3.4/cfst_linux_amd64.tar.gz
+# 下载 CFST 压缩包（这个地址是始终指向最新版本，可自行根据需求替换 URL 末尾的 [文件名]）
+wget -N https://github.com/XIU2/CloudflareSpeedTest/releases/latest/download/cfst_linux_amd64.tar.gz
 # 如果你是在国内网络环境中下载，那么请使用下面这几个镜像加速之一：
-# wget -N https://wget.la/https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.3.4/cfst_linux_amd64.tar.gz
-# wget -N https://ghfast.top/https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.3.4/cfst_linux_amd64.tar.gz
-# wget -N https://ghproxy.it/https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.3.4/cfst_linux_amd64.tar.gz
-# wget -N https://gh-proxy.org/https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.3.4/cfst_linux_amd64.tar.gz
-# wget -N https://cdn.gh-proxy.org/https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.3.4/cfst_linux_amd64.tar.gz
+# wget -N https://wget.la/https://github.com/XIU2/CloudflareSpeedTest/releases/latest/download/cfst_linux_amd64.tar.gz
+# wget -N https://ghfast.top/https://github.com/XIU2/CloudflareSpeedTest/releases/latest/download/cfst_linux_amd64.tar.gz
+# wget -N https://ghproxy.it/https://github.com/XIU2/CloudflareSpeedTest/releases/latest/download/cfst_linux_amd64.tar.gz
+# wget -N https://gh-proxy.org/https://github.com/XIU2/CloudflareSpeedTest/releases/latest/download/cfst_linux_amd64.tar.gz
+# wget -N https://cdn.gh-proxy.org/https://github.com/XIU2/CloudflareSpeedTest/releases/latest/download/cfst_linux_amd64.tar.gz
 # 如果下载失败的话，尝试删除 -N 参数（如果是为了更新，则记得提前删除旧压缩包 rm cfst_linux_amd64.tar.gz ）
+# 如果要下载特定版本的，可以改用这种，例如：wget -N https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.3.4/cfst_linux_amd64.tar.gz
 
 # 解压（不需要删除旧文件，会直接覆盖，自行根据需求替换 文件名）
 tar -zxf cfst_linux_amd64.tar.gz
@@ -109,7 +112,7 @@ chmod +x cfst
 
 ****
 
-> _在**手机**上独立运行 CFST 测速的简单教程：**[Android](https://github.com/XIU2/CloudflareSpeedTest/discussions/61)、[Android APP](https://github.com/xianshenglu/cloudflare-ip-tester-app)、[IOS](https://github.com/XIU2/CloudflareSpeedTest/discussions/321)**_
+> _在**手机**上独立运行 CFST 测速的简单教程：**[Android](https://github.com/XIU2/CloudflareSpeedTest/discussions/61)、[Android APP](https://github.com/Hsia97/CFSTAPP)、[Android APP](https://github.com/xianshenglu/cloudflare-ip-tester-app)、[IOS](https://github.com/XIU2/CloudflareSpeedTest/discussions/321)**_
 
 > [!NOTE]
 > 注意！本软件仅适用于网站，**不支持给使用 UDP 协议的 Cloudflare WARP 优选 IP**，具体见：[#392](https://github.com/XIU2/CloudflareSpeedTest/discussions/392)
@@ -167,10 +170,10 @@ IP 地址,已发送,已接收,丢包率,平均延迟,下载速度(MB/s),地区�
 ****
 ## \# 进阶使用
 
-直接运行使用的是默认参数，如果想要测速结果更全面、更符合自己的要求，可以自定义参数。
+直接运行使用的是默认参数，如果想要**更好更高效的寻找最适合自己的** IP，那么就需要善用各个参数的搭配组合：
 
 ```Dart
-C:\>cfst.exe -h
+C:\>cfst -h
 
 CloudflareSpeedTest vX.X.X
 测试各个 CDN 或网站所有 IP 的延迟和速度，获取最快 IP (IPv4+IPv6)！
@@ -324,8 +327,8 @@ Windows 要指定参数需要在 CMD 中运行，或者把参数添加到快捷�
 
 > [!TIP]
 > - 各参数均有**默认值**，当使用默认值时参数可以省略（**按需选择**），参数**不分前后顺序**。  
-> - Windows **PowerShell** 只需把下面命令中的 `cfst.exe` 改为 `.\cfst.exe` 即可。  
-> - Linux / macOS 系统只需要把下面命令中的 `cfst.exe` 改为 `./cfst` 即可。
+> - Windows **PowerShell** 只需把下面命令中的 `cfst` 改为 `.\cfst` 即可。  
+> - Linux / macOS 系统只需要把下面命令中的 `cfst` 改为 `./cfst` 即可。
 
 ****
 
@@ -344,16 +347,16 @@ Windows 要指定参数需要在 CMD 中运行，或者把参数添加到快捷�
 1. 打开 CFST 程序所在目录  
 2. 空白处按下 <kbd>Shift + 鼠标右键</kbd> 显示右键菜单  
 3. 选择 **\[在此处打开命令窗口\]** 来打开 CMD 窗口，此时默认就位于当前目录下  
-4. 输入带参数的命令，如：`cfst.exe -tl 200 -dn 20` 即可运行
+4. 输入带参数的命令，如：`cfst -tl 200 -dn 20` 即可运行
 
 **方式 二**：
 1. 打开 CFST 程序所在目录  
 2. 直接在文件夹地址栏中全选(或清空)并输入 `cmd` 回车就能打开 CMD 窗口，此时默认就位于当前目录下  
-4. 输入带参数的命令，如：`cfst.exe -tl 200 -dn 20` 即可运行
+4. 输入带参数的命令，如：`cfst -tl 200 -dn 20` 即可运行
 
 > 当然你也可以随便打开一个 CMD 窗口，然后输入如 `cd /d "D:\Program Files\cfst"` 来进入程序目录
 
-> **提示**：如果用的是 **PowerShell** 只需把命令中的 `cfst.exe` 改为 `.\cfst.exe` 即可。  
+> **提示**：如果用的是 **PowerShell** 只需把命令中的 `cfst` 改为 `.\cfst` 即可。  
 > **注意**：在 **PowerShell** 下使用 `-o ""` 会被忽略掉空参数导致报错，可加个空格 `-o " "` 解决
 
 </details>
@@ -393,14 +396,14 @@ D:\ABC\cfst\cfst.exe -tl 200 -dn 20 -o " "
 ****
 ``` bash
 # 指定自带的 IPv4 数据文件可测速这些 IPv4 地址（-f 默认值就是 ip.txt，所以该参数可省略）
-cfst.exe -f ip.txt
+cfst -f ip.txt
 
 # 指定自带的 IPv6 数据文件可测速这些 IPv6 地址
 # 另外，v2.1.0 版本后支持 IPv4+IPv6 混合测速并移除了 -ipv6 参数，因此一个文件内可以同时包含 IPv4+IPv6 地址
-cfst.exe -f ipv6.txt
+cfst -f ipv6.txt
 
 # 也可以直接通过参数指定要测速的 IP
-cfst.exe -ip 1.1.1.1,2606:4700::/32
+cfst -ip 1.1.1.1,2606:4700::/32
 ```
 
 > 测速 IPv6 时，可能会注意到每次测速数量都不一样，了解原因： [#120](https://github.com/XIU2/CloudflareSpeedTest/issues/120)  
@@ -430,18 +433,18 @@ HTTP 协议适用于快速测试某域名指向某 IP 时是否可以访问，�
 
 ``` bash
 # 只需加上 -httping 参数即可切换到 HTTP 协议延迟测速模式
-cfst.exe -httping
+cfst -httping
 
 # 软件会根据访问时网页返回的有效 HTTP 状态码来判断可用性（当然超时也算），默认对返回 200 301 302 这三个 HTTP 状态码的视为有效，可以手动指定认为有效的 HTTP 状态码，但只能指定一个（你需要提前确定测试地址正常情况下会返回哪个状态码）
-cfst.exe -httping -httping-code 200
+cfst -httping -httping-code 200
 
 # 通过 -url 参数来指定 HTTPing 测试地址（可以是任意网页 URL，不局限于具体文件地址）
-cfst.exe -httping -url https://cf.xiu2.xyz/url
+cfst -httping -url https://cf.xiu2.xyz/url
 # 如果你要 HTTPing 测试其他网站/CDN，那么指定一个该网站/使用该 CDN 的地址（因为软件默认地址是 Cloudflare 的，只能用于测试 Cloudflare 的 IP）
 
 # 注意：如果测速地址为 HTTP 协议，记得加上 -tp 80（这个参数会影响 延迟测速/下载测速 时使用的端口）
 # 同理，如果要测速 80 端口，那么也需要加上 -url 参数来指定一个 http:// 协议的地址才行（且该地址不会强制重定向至 HTTPS），如果是非 80 443 端口，那么需要确定该下载测速地址是否支持通过该端口访问。
-cfst.exe -httping -tp 80 -url http://cdn.cloudflare.steamstatic.com/steam/apps/5952/movie_max.webm
+cfst -httping -tp 80 -url http://cdn.cloudflare.steamstatic.com/steam/apps/5952/movie_max.webm
 ```
 
 </details>
@@ -482,7 +485,7 @@ Cloudflare CDN 的节点 IP 是 Anycast IP，即每个 IP 对应的服务器节�
 # 如果延迟测速后结果为 0，则说明没有找到任何一个（未超时可用的）指定地区的 IP。
 # 节点地区名为当地 IATA 机场地区码或国家/城市码，指定多个时用英文逗号分隔，v2.2.3 版本后支持小写
 
-cfst.exe -httping -cfcolo HKG,KHH,NRT,LAX,SEA,SJC,FRA,MAD
+cfst -httping -cfcolo HKG,KHH,NRT,LAX,SEA,SJC,FRA,MAD
 
 # 注意，该参数只有在 HTTPing 延迟测速模式下才可用（因为软件是通过 HTTP 链接中的响应头来获得该 IP 的实际地区码）
 
@@ -505,13 +508,13 @@ cfst.exe -httping -cfcolo HKG,KHH,NRT,LAX,SEA,SJC,FRA,MAD
 
 ``` bash
 # 指定 IPv4 数据文件，不显示结果直接退出，输出结果到文件（-p 值为 0）
-cfst.exe -f 1.txt -p 0 -dd
+cfst -f 1.txt -p 0 -dd
 
 # 指定 IPv4 数据文件，不输出结果到文件，直接显示结果（-p 值为 10 条，-o 值为空但引号不能少）
-cfst.exe -f 2.txt -o "" -p 10 -dd
+cfst -f 2.txt -o "" -p 10 -dd
 
 # 指定 IPv4 数据文件 及 输出结果到文件（相对路径，即当前目录下，如含空格请加上引号）
-cfst.exe -f 3.txt -o result.txt -dd
+cfst -f 3.txt -o result.txt -dd
 
 
 # 指定 IPv4 数据文件 及 输出结果到文件（相对路径，即当前目录内的 abc 文件夹下，如含空格请加上引号）
@@ -519,7 +522,7 @@ cfst.exe -f 3.txt -o result.txt -dd
 ./cfst -f abc/3.txt -o abc/result.txt -dd
 
 # Windows（注意是反斜杠）
-cfst.exe -f abc\3.txt -o abc\result.txt -dd
+cfst -f abc\3.txt -o abc\result.txt -dd
 
 
 # 指定 IPv4 数据文件 及 输出结果到文件（绝对路径，即 C:\abc\ 目录下，如含空格请加上引号）
@@ -527,7 +530,7 @@ cfst.exe -f abc\3.txt -o abc\result.txt -dd
 ./cfst -f /abc/4.txt -o /abc/result.csv -dd
 
 # Windows（注意是反斜杠）
-cfst.exe -f C:\abc\4.txt -o C:\abc\result.csv -dd
+cfst -f C:\abc\4.txt -o C:\abc\result.csv -dd
 
 
 # 如果要以【绝对路径】运行 CFST，那么 -f / -o 参数中的文件名也必须是【绝对路径】，否则会报错找不到文件！
@@ -535,7 +538,7 @@ cfst.exe -f C:\abc\4.txt -o C:\abc\result.csv -dd
 /abc/cfst -f /abc/4.txt -o /abc/result.csv -dd
 
 # Windows（注意是反斜杠）
-C:\abc\cfst.exe -f C:\abc\4.txt -o C:\abc\result.csv -dd
+C:\abc\cfst -f C:\abc\4.txt -o C:\abc\result.csv -dd
 ```
 </details>
 
@@ -552,7 +555,7 @@ C:\abc\cfst.exe -f C:\abc\4.txt -o C:\abc\result.csv -dd
 # 如果你想要测速非默认 443 的其他端口，则需要通过 -tp 参数指定（该参数会影响 延迟测速/下载测速 时使用的端口）
 
 # 如果要延迟测速 80 端口+下载测速（如果 -dd 禁用了下载测速则不需要），那么还需要指定 http:// 协议的下载测速地址才行（且该地址不会强制重定向至 HTTPS，因为那样就变成 443 端口了）
-cfst.exe -tp 80 -url http://cdn.cloudflare.steamstatic.com/steam/apps/5952/movie_max.webm
+cfst -tp 80 -url http://speed.cloudflare.com/__down?bytes=99999999
 
 # 如果是非 80 443 的其他端口，那么需要确定你使用的下载测速地址是否支持通过该非标端口访问。
 ```
@@ -572,10 +575,10 @@ cfst.exe -tp 80 -url http://cdn.cloudflare.steamstatic.com/steam/apps/5952/movie
 # 该参数适用于下载测速 及 HTTP 协议的延迟测速，对于后者该地址可以是任意网页 URL（不局限于具体文件地址）
 
 # 地址要求：可以直接下载、文件大小超过 200MB、用的是 Cloudflare CDN
-cfst.exe -url https://cf.xiu2.xyz/url
+cfst -url https://cf.xiu2.xyz/url
 
 # 注意：如果测速地址为 HTTP 协议（该地址不能强制重定向至 HTTPS），记得加上 -tp 80（这个参数会影响 延迟测速/下载测速 时使用的端口），如果是非 80 443 端口，那么需要确定下载测速地址是否支持通过该端口访问。
-cfst.exe -tp 80 -url http://cdn.cloudflare.steamstatic.com/steam/apps/5952/movie_max.webm
+cfst -tp 80 -url http://speed.cloudflare.com/__down?bytes=99999999
 ```
 
 </details>
@@ -596,27 +599,44 @@ cfst.exe -tp 80 -url http://cdn.cloudflare.steamstatic.com/steam/apps/5952/movie
 ``` bash
 # 平均延迟上限：200 ms，下载速度下限：0 MB/s
 # 即找到平均延迟低于 200 ms 的 IP，然后再按延迟从低到高进行 10 次下载测速
-cfst.exe -tl 200
+cfst -tl 200
 ```
 
 > 如果**没有找到一个满足延迟**条件的 IP，那么不会输出任何内容。
 
 ****
 
-- 仅指定 **[平均延迟上限]** 条件，且**只延迟测速，不下载测速**
+- 指定 **[平均延迟上限]** 条件，且**只延迟测速，不下载测速**
 
 ``` bash
 # 平均延迟上限：200 ms，下载速度下限：0 MB/s，数量：不知道多少 个
 # 即只输出低于 200ms 的 IP，且不再下载测速（因为不再下载测速，所以 -dn 参数就无效了）
-cfst.exe -tl 200 -dd
+cfst -tl 200 -dd
 ```
+
+****
+
+- 同时指定 **[平均延迟下限] + [平均延迟上限]** 条件
+
+``` bash
+# 平均延迟下限：60 ms，平均延迟下限：200 ms，下载速度下限：0 MB/s
+# 即找到平均延迟高于 60 ms 且低于 200 ms 的 IP（也就是 60~200ms 之间的），然后再按延迟从低到高进行 10 次下载测速
+cfst -tll 60 -tl 200
+```
+
+> 可能很多纳闷延迟不是越低越好吗？为什么还要丢掉低延迟的 IP ？  
+> - 一方面是：一些人确实存在个性化需求，需要指定延迟区间。  
+> - 另一方面则是：**延迟和丢包最低的 IP 不一定就速度更快**（当然一般情况下延迟更低且不丢包是更好的，因为这意味着 **"物理距离近+中间路由环节少+网络稳定"**，因此显然这种网络质量遇到速度快的概率更高），但网络质量好就不一定速度更快，因为传输速度是可以被控制的（比如 QOS），因此也会出现一些明明延迟更高，但是速度反而更快的情况（仅限于延迟差异，如果还涉及到丢包，那么因为丢包对传输速度影响**极大**，也会导致这种情况）  
+> - 比如国内移动用户默认参数测速结果基本上都是清一色的 几十ms 的香港节点 IP，但容易遇到延迟很低还不丢包，但就是速度很差，或者时快时慢的，很折磨人，此时改用其它地区的虽然延迟更高但可能反而速度更快，就可以使用 `-tll` 来过滤掉这些香港的（除此之外就只有 httping 模式下的 colo 参数可以过滤了）
+
+****
 
 - 仅指定 **[丢包几率上限]** 条件
 
 ``` bash
 # 丢包几率上限：0.25
 # 即找到丢包率低于等于 0.25 的 IP，范围 0.00~1.00，如果 -tlr 0 则代表过滤掉任何丢包的 IP
-cfst.exe -tlr 0.25
+cfst -tlr 0.25
 ```
 
 ****
@@ -626,7 +646,7 @@ cfst.exe -tlr 0.25
 ``` bash
 # 平均延迟上限：9999 ms，下载速度下限：5 MB/s，数量：10 个（可选）
 # 即需要找到 10 个平均延迟低于 9999 ms 且下载速度高于 5 MB/s 的 IP 才会停止测速
-cfst.exe -sl 5 -dn 10
+cfst -sl 5 -dn 10
 ```
 
 > 如果**没有找到一个满足速度**条件的 IP，那么不会输出任何内容，你可能需要调低预期的下载测速下限条件，但你需要知道当前的大概测速速度都在什么范围，那么你就可以加上 `-debug` 参数开启调试模式，这样再遇到这种情况时，就会**忽略条件返回所有测速结果**，你就能看到这些 IP 的下载速度都有多少，心里也就有数了，然后**适当调低 `-sl` 再试试**。  
@@ -643,7 +663,7 @@ cfst.exe -sl 5 -dn 10
 # 平均延迟上限、下载速度下限均支持小数（如 -sl 0.5）
 # 平均延迟上限：200 ms，下载速度下限：5.6 MB/s，数量：10 个（可选）
 # 即需要找到 10 个平均延迟低于 200 ms 且下载速度高于 5 .6MB/s 的 IP 才会停止测速
-cfst.exe -tl 200 -sl 5.6 -dn 10
+cfst -tl 200 -sl 5.6 -dn 10
 ```
 
 > 如果**没有找到一个满足延迟**条件的 IP，那么不会输出任何内容。  
@@ -696,7 +716,7 @@ cfst.exe -tl 200 -sl 5.6 -dn 10
 ``` bash
 # 先进入 CFST 所在目录，然后运行：
 # Windows 系统（在 CMD 中运行）
-cfst.exe -ip 1.1.1.1,2.2.2.2/24,2606:4700::/32
+cfst -ip 1.1.1.1,2.2.2.2/24,2606:4700::/32
 
 # Linux 系统
 ./cfst -ip 1.1.1.1,2.2.2.2/24,2606:4700::/32
@@ -723,7 +743,7 @@ cfst.exe -ip 1.1.1.1,2.2.2.2/24,2606:4700::/32
 ``` bash
 # 先进入 CFST 所在目录，然后运行：
 # Windows 系统（在 CMD 中运行）
-cfst.exe -f 1.txt
+cfst -f 1.txt
 
 # Linux 系统
 ./cfst -f 1.txt
@@ -842,6 +862,9 @@ cfst.exe -f 1.txt
 ****
 
 ## 衍生项目
+
+- _[https://github.com/Hsia97/CFSTAPP](https://github.com/Hsia97/CFSTAPP)_  
+_**CFST 安卓版 APP [#638](https://github.com/XIU2/CloudflareSpeedTest/discussions/638)**_
 
 - _https://github.com/xianshenglu/cloudflare-ip-tester-app_  
 _**CFST 安卓版 APP [#202](https://github.com/XIU2/CloudflareSpeedTest/discussions/320)**_
