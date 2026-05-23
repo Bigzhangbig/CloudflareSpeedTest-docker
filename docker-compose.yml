@@ -1,0 +1,31 @@
+version: '3'
+
+services:
+  cfst:
+    image: meiof2c8oy5sp1-ghcr.xuanyuan.run/bigzhangbig/cloudflarespeedtest-docker:pre
+    container_name: cfst
+    restart: "no"
+    env_file:
+      - .env
+    volumes:
+      - ./output:/app/output
+    environment:
+      - SCAN_TYPE=both
+    command:
+      - -n
+      - "50"
+      - -httping
+      - -tl
+      - "200"
+      - -sl
+      - "1"
+      - -dn
+      - "10"
+      - -p
+      - "30"
+      - -tp
+      - "8443"
+      - -url
+      - https://cdn.harvryhome.site/400M
+      - -o
+      - /app/output/result.csv

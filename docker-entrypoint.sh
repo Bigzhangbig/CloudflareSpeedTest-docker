@@ -32,7 +32,7 @@ if ! echo " $args " | grep -q -- " -f "; then
 			if [ -z "$CFST_TP" ]; then CFST_TP="8443"; fi
 			;;
 		both)
-			cat ip.txt ipv6.txt > all_ips.txt
+			(cat ip.txt; echo; cat ipv6.txt) > all_ips.txt
 			args="$args -f all_ips.txt"
 			;;
 		*)
