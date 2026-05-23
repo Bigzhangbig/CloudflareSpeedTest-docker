@@ -116,14 +116,11 @@ upload_gist_if_needed() {
 		--arg filename "$GIST_FILENAME" \
 		--arg description "$GIST_DESCRIPTION" \
 		--arg content "$(cat "$RESULT_FILE")" \
-		--argjson existing "$GIST_META" \
 		'{
 			description: $description,
-			files: (
-				((($existing.files // {}) | to_entries | map(if .key == $filename then empty else {key: .key, value: null} end) | from_entries)
-				+ {($filename): {content: $content}}
-				)
-			)
+			files: {
+				($filename): {content: $content}
+			}
 		}')
 
 	UPLOAD_URL="https://api.github.com/gists/$GIST_ID"
