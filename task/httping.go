@@ -16,13 +16,15 @@ import (
 )
 
 var (
-	Httping               bool
-	HttpingStatusCode     int
-	HttpingCFColo         string
-	HttpingCFColomap      *sync.Map
-	RegexpColoIATACode    = regexp.MustCompile(`[A-Z]{3}`)  // 匹配 IATA 机场地区码（俗称 机场三字码）的正则表达式
-	RegexpColoCountryCode = regexp.MustCompile(`[A-Z]{2}`)  // 匹配国家地区码的正则表达式（如 US、CN、UK 等）
-	RegexpColoGcore       = regexp.MustCompile(`^[a-z]{2}`) // 匹配城市地区码的正则表达式（小写，如 us、cn、uk 等）
+	Httping                 bool
+	HttpingStatusCode       int
+	HttpingCFColo           string
+	HttpingCFColomap        *sync.Map
+	HttpingCFColoExclude    string
+	HttpingCFColoExcludeMap *sync.Map
+	RegexpColoIATACode      = regexp.MustCompile(`[A-Z]{3}`)  // 匹配 IATA 机场地区码（俗称 机场三字码）的正则表达式
+	RegexpColoCountryCode   = regexp.MustCompile(`[A-Z]{2}`)  // 匹配国家地区码的正则表达式（如 US、CN、UK 等）
+	RegexpColoGcore         = regexp.MustCompile(`^[a-z]{2}`) // 匹配城市地区码的正则表达式（小写，如 us、cn、uk 等）
 )
 
 // pingReceived pingTotalTime
@@ -82,13 +84,13 @@ func (p *Ping) httping(ip *net.IPAddr) (int, time.Duration, string) {
 		// 通过头部参数获取地区码
 		colo = getHeaderColo(response.Header)
 
-		// 只有指定了地区才匹配机场地区码
-		if HttpingCFColo != "" {
-			// 判断是否匹配指定的地区码
+		// 匹配/排除指定地区
+		if HttpingCFColo != "" || HttpingCFColoExclude != "" {
+			origColo := colo
 			colo = p.filterColo(colo)
-			if colo == "" { // 没有匹配到地区码或不符合指定地区则直接结束该 IP 测试
+			if colo == "" { // 没有匹配到地区码或不符合筛选条件则直接结束该 IP 测试
 				if utils.Debug { // 调试模式下，输出更多信息
-					utils.Red.Printf("[调试] IP: %s, 地区码不匹配: %s\n", ip.String(), colo)
+					utils.Red.Printf("[调试] IP: %s, 地区码不匹配: %s\n", ip.String(), origColo)
 				}
 				return 0, 0, ""
 			}
@@ -124,13 +126,25 @@ func (p *Ping) httping(ip *net.IPAddr) (int, time.Duration, string) {
 }
 
 func MapColoMap() *sync.Map {
-	if HttpingCFColo == "" {
+	return mapColoMapFromString(HttpingCFColo)
+}
+
+func MapColoExcludeMap() *sync.Map {
+	return mapColoMapFromString(HttpingCFColoExclude)
+}
+
+func mapColoMapFromString(coloText string) *sync.Map {
+	if coloText == "" {
 		return nil
 	}
-	// 将 -cfcolo 参数指定的地区地区码转为大写并格式化
-	colos := strings.Split(strings.ToUpper(HttpingCFColo), ",")
+	// 将参数指定的地区码转为大写并格式化（去除空格，忽略空项）
+	colos := strings.Split(strings.ToUpper(coloText), ",")
 	colomap := &sync.Map{}
 	for _, colo := range colos {
+		colo = strings.TrimSpace(colo)
+		if colo == "" {
+			continue
+		}
 		colomap.Store(colo, colo)
 	}
 	return colomap
@@ -196,13 +210,19 @@ func (p *Ping) filterColo(colo string) string {
 	if colo == "" {
 		return ""
 	}
-	// 如果没有指定 -cfcolo 参数，则直接返回
+
+	// 排除指定地区
+	if HttpingCFColoExcludeMap != nil {
+		if _, ok := HttpingCFColoExcludeMap.Load(colo); ok {
+			return ""
+		}
+	}
+
+	// 匹配指定地区（未指定则允许所有）
 	if HttpingCFColomap == nil {
 		return colo
 	}
-	// 匹配 机场地区码 是否为指定的地区
-	_, ok := HttpingCFColomap.Load(colo)
-	if ok {
+	if _, ok := HttpingCFColomap.Load(colo); ok {
 		return colo
 	}
 	return ""

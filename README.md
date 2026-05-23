@@ -208,6 +208,8 @@ https://github.com/XIU2/CloudflareSpeedTest
         其中 CDN77、Bunny 使用的是 二字国家/区域码，如：US,CN
         其中 Gcore 使用的是 二字城市码，如：FR,AM
         因此大家使用 -cfcolo 指定地区码时要根据不同的 CDN 来指定不同类型的地区码。
+    -cfcolo-ex HKG,LAX
+        排除指定地区；IATA 机场地区码或国家/城市码，英文逗号分隔，大小写均可，仅 HTTPing 模式可用；(默认 不排除)
 
     -tl 200
         平均延迟上限；只输出低于指定平均延迟的 IP，各上下限条件可搭配使用；(默认 9999 ms)
@@ -476,7 +478,7 @@ Cloudflare CDN 的节点 IP 是 Anycast IP，即每个 IP 对应的服务器节�
 > 其中 **Cloudflare、AWS CloudFront、Fastly** 都使用的是 **`IATA 三字机场地区码`**，如：HKG,LAX  
 > 而 **CDN77、Bunny** 使用的是 **`二字国家/区域码`**，如：US,CN  
 > **Gcore** 则使用的是 **`二字城市码`**，如：FR,AM  
-> 因此大家使用 `-cfcolo` 指定地区码时要根据不同的 CDN 来指定不同类型的地区码。
+> 因此大家使用 `-cfcolo` / `-cfcolo-ex` 指定地区码时要根据不同的 CDN 来指定不同类型的地区码。
 
 > **注意**：如果你要用于筛选 AWS CloudFront CDN 地区，那么要通过 `-url` 参数指定一个使用 AWS CloudFront CDN 的下载测速地址（因为软件默认下载测速地址是 Cloudflare CDN 的），另外有时候 HTTPing 模式测速一些 AWS CloudFront 地址会返回 403 错误，这种情况下需要加上 `-httping-code 403` 才能正确获取地区码。
 
@@ -486,6 +488,10 @@ Cloudflare CDN 的节点 IP 是 Anycast IP，即每个 IP 对应的服务器节�
 # 节点地区名为当地 IATA 机场地区码或国家/城市码，指定多个时用英文逗号分隔，v2.2.3 版本后支持小写
 
 cfst -httping -cfcolo HKG,KHH,NRT,LAX,SEA,SJC,FRA,MAD
+
+# 排除指定地区（与 -cfcolo 搭配使用时，排除优先级更高）
+cfst -httping -cfcolo-ex HKG,LAX
+cfst -httping -cfcolo HKG,NRT,LAX -cfcolo-ex LAX
 
 # 注意，该参数只有在 HTTPing 延迟测速模式下才可用（因为软件是通过 HTTP 链接中的响应头来获得该 IP 的实际地区码）
 
