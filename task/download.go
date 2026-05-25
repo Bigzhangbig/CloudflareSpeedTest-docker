@@ -193,6 +193,9 @@ func downloadHandler(ip *net.IPAddr) (float64, string) {
 			if req.Header.Get("Referer") == defaultURL { // 当使用默认下载测速地址时，重定向不携带 Referer
 				req.Header.Del("Referer")
 			}
+			if isOfficialCloudflareSpeedDownloadURL(req.URL) {
+				req.Header.Set("Referer", cloudflareSpeedReferer)
+			}
 			return nil
 		},
 	}
