@@ -566,6 +566,8 @@ cfst -tp 80 -url http://speed.cloudflare.com/__down?bytes=99999999
 # 如果是非 80 443 的其他端口，那么需要确定你使用的下载测速地址是否支持通过该非标端口访问。
 ```
 
+> 提示：当下载测速地址为 Cloudflare 官方测速接口 `https://speed.cloudflare.com/__down?bytes=...`（如 2GB/10GB 链接）时，必须携带 `Referer: https://speed.cloudflare.com/` 请求头，否则会触发 403。程序会在检测到该官方接口时自动附加该 Referer。
+
 </details>
 
 ****
@@ -586,6 +588,8 @@ cfst -url https://cf.xiu2.xyz/url
 # 注意：如果测速地址为 HTTP 协议（该地址不能强制重定向至 HTTPS），记得加上 -tp 80（这个参数会影响 延迟测速/下载测速 时使用的端口），如果是非 80 443 端口，那么需要确定下载测速地址是否支持通过该端口访问。
 cfst -tp 80 -url http://speed.cloudflare.com/__down?bytes=99999999
 ```
+
+> 提示：当下载测速地址为 Cloudflare 官方测速接口 `https://speed.cloudflare.com/__down?bytes=...`（如 2GB/10GB 链接）时，必须携带 `Referer: https://speed.cloudflare.com/` 请求头，否则会触发 403。程序会在检测到该官方接口时自动附加该 Referer。
 
 </details>
 
