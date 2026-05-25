@@ -6,7 +6,9 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/url"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -22,6 +24,8 @@ const (
 	defaultDisableDownload         = false
 	defaultTestNum                 = 10
 	defaultMinSpeed        float64 = 0.0
+	cloudflareSpeedHost            = "speed.cloudflare.com"
+	cloudflareSpeedReferer         = "https://speed.cloudflare.com/"
 )
 
 var (
@@ -165,6 +169,13 @@ func printDownloadDebugInfo(ip *net.IPAddr, err error, statusCode int, url, last
 	}
 }
 
+func isOfficialCloudflareSpeedDownloadURL(u *url.URL) bool {
+	if u == nil {
+		return false
+	}
+	return strings.EqualFold(u.Hostname(), cloudflareSpeedHost) && u.Path == "/__down"
+}
+
 // return download Speed
 func downloadHandler(ip *net.IPAddr) (float64, string) {
 	var lastRedirectURL string // 用于记录最后一次重定向目标，以便在访问错误时输出
@@ -182,6 +193,9 @@ func downloadHandler(ip *net.IPAddr) (float64, string) {
 			if req.Header.Get("Referer") == defaultURL { // 当使用默认下载测速地址时，重定向不携带 Referer
 				req.Header.Del("Referer")
 			}
+			if isOfficialCloudflareSpeedDownloadURL(req.URL) {
+				req.Header.Set("Referer", cloudflareSpeedReferer)
+			}
 			return nil
 		},
 	}
@@ -195,6 +209,9 @@ func downloadHandler(ip *net.IPAddr) (float64, string) {
 	}
 
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.80 Safari/537.36")
+	if isOfficialCloudflareSpeedDownloadURL(req.URL) {
+		req.Header.Set("Referer", cloudflareSpeedReferer)
+	}
 
 	response, err := client.Do(req)
 	if err != nil {
