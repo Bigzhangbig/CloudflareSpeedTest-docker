@@ -169,18 +169,32 @@ func printDownloadDebugInfo(ip *net.IPAddr, err error, statusCode int, url, last
 	}
 }
 
-func isOfficialCloudflareSpeedDownloadURL(u *url.URL) bool {
+func IsOfficialCloudflareSpeedDownloadURL(u *url.URL) bool {
 	if u == nil {
 		return false
 	}
 	return strings.EqualFold(u.Hostname(), cloudflareSpeedHost) && u.Path == "/__down"
 }
 
+// SetReferer 为请求设置 Referer
+func SetReferer(req *http.Request) {
+	if req == nil || req.URL == nil {
+		return
+	}
+	if req.Header.Get("Referer") == defaultURL { // 当使用默认下载测速地址时，重定向不携带 Referer
+		req.Header.Del("Referer")
+	}
+	if IsOfficialCloudflareSpeedDownloadURL(req.URL) {
+		req.Header.Set("Referer", cloudflareSpeedReferer)
+	}
+}
+
 // return download Speed
 func downloadHandler(ip *net.IPAddr) (float64, string) {
 	var lastRedirectURL string // 用于记录最后一次重定向目标，以便在访问错误时输出
+	tr := &http.Transport{DialContext: getDialContext(ip)}
 	client := &http.Client{
-		Transport: &http.Transport{DialContext: getDialContext(ip)},
+		Transport: tr,
 		Timeout:   Timeout,
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			lastRedirectURL = req.URL.String() // 记录每次重定向的目标，以便在访问错误时输出
@@ -190,16 +204,11 @@ func downloadHandler(ip *net.IPAddr) (float64, string) {
 				}
 				return http.ErrUseLastResponse
 			}
-			if req.Header.Get("Referer") == defaultURL { // 当使用默认下载测速地址时，重定向不携带 Referer
-				req.Header.Del("Referer")
-			}
-			if isOfficialCloudflareSpeedDownloadURL(req.URL) {
-				req.Header.Set("Referer", cloudflareSpeedReferer)
-			}
+			SetReferer(req)
 			return nil
 		},
 	}
-	defer client.CloseIdleConnections()
+	defer tr.CloseIdleConnections()
 	req, err := http.NewRequest("GET", URL, nil)
 	if err != nil {
 		if utils.Debug { // 调试模式下，输出更多信息
@@ -209,12 +218,13 @@ func downloadHandler(ip *net.IPAddr) (float64, string) {
 	}
 
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.80 Safari/537.36")
-	if isOfficialCloudflareSpeedDownloadURL(req.URL) {
-		req.Header.Set("Referer", cloudflareSpeedReferer)
-	}
+	SetReferer(req)
 
 	response, err := client.Do(req)
 	if err != nil {
+		if response != nil && response.Body != nil {
+			response.Body.Close()
+		}
 		if utils.Debug { // 调试模式下，输出更多信息
 			printDownloadDebugInfo(ip, err, 0, URL, lastRedirectURL, response)
 		}

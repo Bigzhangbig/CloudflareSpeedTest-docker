@@ -29,17 +29,18 @@ var (
 
 // pingReceived pingTotalTime
 func (p *Ping) httping(ip *net.IPAddr) (int, time.Duration, string) {
+	tr := &http.Transport{
+		DialContext: getDialContext(ip),
+		//TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, // 跳过证书验证
+	}
 	hc := http.Client{
-		Timeout: time.Second * 2,
-		Transport: &http.Transport{
-			DialContext: getDialContext(ip),
-			//TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, // 跳过证书验证
-		},
+		Timeout:   time.Second * 2,
+		Transport: tr,
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse // 阻止重定向
 		},
 	}
-	defer hc.CloseIdleConnections()
+	defer tr.CloseIdleConnections()
 
 	// 先访问一次获得 HTTP 状态码 及 地区码
 	var colo string
@@ -52,14 +53,17 @@ func (p *Ping) httping(ip *net.IPAddr) (int, time.Duration, string) {
 			return 0, 0, ""
 		}
 		request.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.80 Safari/537.36")
+		SetReferer(request)
 		response, err := hc.Do(request)
 		if err != nil {
+			if response != nil && response.Body != nil {
+				response.Body.Close()
+			}
 			if utils.Debug { // 调试模式下，输出更多信息
 				utils.Red.Printf("[调试] IP: %s, 延迟测速失败，错误信息: %v, 测速地址: %s\n", ip.String(), err, URL)
 			}
 			return 0, 0, ""
 		}
-		defer response.Body.Close()
 
 		//fmt.Println("IP:", ip, "StatusCode:", response.StatusCode, response.Request.URL)
 		// 如果未指定的 HTTP 状态码，或指定的状态码不合规，则默认只认为 200、301、302 才算 HTTPing 通过
@@ -68,6 +72,7 @@ func (p *Ping) httping(ip *net.IPAddr) (int, time.Duration, string) {
 				if utils.Debug { // 调试模式下，输出更多信息
 					utils.Red.Printf("[调试] IP: %s, 延迟测速终止，HTTP 状态码: %d, 测速地址: %s\n", ip.String(), response.StatusCode, URL)
 				}
+				response.Body.Close()
 				return 0, 0, ""
 			}
 		} else {
@@ -75,6 +80,7 @@ func (p *Ping) httping(ip *net.IPAddr) (int, time.Duration, string) {
 				if utils.Debug { // 调试模式下，输出更多信息
 					utils.Red.Printf("[调试] IP: %s, 延迟测速终止，HTTP 状态码: %d, 指定的 HTTP 状态码 %d, 测速地址: %s\n", ip.String(), response.StatusCode, HttpingStatusCode, URL)
 				}
+				response.Body.Close()
 				return 0, 0, ""
 			}
 		}
@@ -83,6 +89,7 @@ func (p *Ping) httping(ip *net.IPAddr) (int, time.Duration, string) {
 
 		// 通过头部参数获取地区码
 		colo = getHeaderColo(response.Header)
+		response.Body.Close()
 
 		// 匹配/排除指定地区
 		if HttpingCFColo != "" || HttpingCFColoExclude != "" {
@@ -107,12 +114,16 @@ func (p *Ping) httping(ip *net.IPAddr) (int, time.Duration, string) {
 			return 0, 0, ""
 		}
 		request.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.80 Safari/537.36")
+		SetReferer(request)
 		if i == PingTimes-1 {
 			request.Header.Set("Connection", "close")
 		}
 		startTime := time.Now()
 		response, err := hc.Do(request)
 		if err != nil {
+			if response != nil && response.Body != nil {
+				response.Body.Close()
+			}
 			continue
 		}
 		success++

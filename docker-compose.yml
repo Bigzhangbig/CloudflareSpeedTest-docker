@@ -1,16 +1,19 @@
 version: '3'
 
 services:
-  cfst:
-    image: meiof2c8oy5sp1-ghcr.xuanyuan.run/bigzhangbig/cloudflarespeedtest-docker:pre
-    container_name: cfst
+  cfst-ipv4:
+    image: meiof2c8oy5sp1-ghcr.xuanyuan.run/bigzhangbig/cloudflarespeedtest-docker:latest
+    container_name: cfst-ipv4
     restart: "no"
     env_file:
       - .env
     volumes:
       - ./output:/app/output
+      - ./docker-entrypoint.sh:/app/docker-entrypoint.sh
     environment:
-      - SCAN_TYPE=both
+      - SCAN_TYPE=ipv4
+      - GIST_FILENAME=result_school_ipv4.csv
+      - GIST_RESULT_FILE=/app/output/result_ipv4.csv
     command:
       - -n
       - "50"
@@ -26,6 +29,40 @@ services:
       - -tp
       - "8443"
       - -url
-      - https://cdn.harvryhome.site/400M
+      - https://speed.cloudflare.com/__down?bytes=419430400
       - -o
-      - /app/output/result.csv
+      - /app/output/result_ipv4.csv
+
+  cfst-ipv6:
+    image: meiof2c8oy5sp1-ghcr.xuanyuan.run/bigzhangbig/cloudflarespeedtest-docker:latest
+    container_name: cfst-ipv6
+    restart: "no"
+    # 使用主机网络以确保 IPv6 测速能够正常访问外网
+    network_mode: "host"
+    env_file:
+      - .env
+    volumes:
+      - ./output:/app/output
+      - ./docker-entrypoint.sh:/app/docker-entrypoint.sh
+    environment:
+      - SCAN_TYPE=ipv6
+      - GIST_FILENAME=result_school_ipv6.csv
+      - GIST_RESULT_FILE=/app/output/result_ipv6.csv
+    command:
+      - -n
+      - "50"
+      - -httping
+      - -tl
+      - "200"
+      - -sl
+      - "1"
+      - -dn
+      - "10"
+      - -p
+      - "30"
+      - -tp
+      - "8443"
+      - -url
+      - https://speed.cloudflare.com/__down?bytes=419430400
+      - -o
+      - /app/output/result_ipv6.csv
