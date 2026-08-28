@@ -81,6 +81,17 @@ upload_gist_if_needed() {
 		return 0
 	fi
 
+	# Filter out IPs with 0 download speed (keep header)
+	FILTERED_FILE=$(mktemp)
+	head -1 "$RESULT_FILE" > "$FILTERED_FILE"
+	awk -F',' '$6 != "0.00" && $6 != "下载速度(MB/s)"' "$RESULT_FILE" >> "$FILTERED_FILE"
+	if [ "$(wc -l < "$FILTERED_FILE")" -le 1 ]; then
+		echo "[gist] No IPs with speed > 0, skip upload."
+		rm -f "$FILTERED_FILE"
+		return 0
+	fi
+	RESULT_FILE="$FILTERED_FILE"
+
 	GIST_DESCRIPTION_VALUE="${GIST_DESCRIPTION:-}"
 	if [ -z "$GIST_DESCRIPTION_VALUE" ]; then
 		TEST_PORT=""
@@ -101,40 +112,49 @@ upload_gist_if_needed() {
 	fi
 	GIST_DESCRIPTION="$GIST_DESCRIPTION_VALUE"
 
+	GITHUB_API_URL="${GITHUB_API_URL:-https://api.github.com}"
+
 	GIST_META=$(curl -fsSL \
+		--connect-timeout 10 \
+		--retry 3 \
 		-H "Accept: application/vnd.github+json" \
 		-H "Authorization: Bearer $GIST_TOKEN_VALUE" \
 		-H "X-GitHub-Api-Version: 2022-11-28" \
-		"https://api.github.com/gists/$GIST_ID" 2>/dev/null || echo '{}')
+		"${GITHUB_API_URL}/gists/$GIST_ID" 2>/dev/null || echo '{}')
 
 	GIST_FILENAME="${GIST_FILENAME:-}"
 	if [ -z "$GIST_FILENAME" ]; then
 		GIST_FILENAME=$(echo "$GIST_META" | jq -r '.files | keys[0] // "result.csv"')
 	fi
 
-	PAYLOAD=$(jq -n \
+	PAYLOAD_FILE=$(mktemp)
+	jq -n \
 		--arg filename "$GIST_FILENAME" \
 		--arg description "$GIST_DESCRIPTION" \
-		--arg content "$(cat "$RESULT_FILE")" \
+		--rawfile content "$RESULT_FILE" \
 		'{
 			description: $description,
 			files: {
 				($filename): {content: $content}
 			}
-		}')
+		}' > "$PAYLOAD_FILE"
 
-	UPLOAD_URL="https://api.github.com/gists/$GIST_ID"
+	UPLOAD_URL="${GITHUB_API_URL}/gists/$GIST_ID"
 	UPLOAD_METHOD="PATCH"
 
 	RESPONSE=$(curl -fsSL -X "$UPLOAD_METHOD" \
+		--connect-timeout 10 \
+		--retry 3 \
 		-H "Accept: application/vnd.github+json" \
 		-H "Authorization: Bearer $GIST_TOKEN_VALUE" \
 		-H "X-GitHub-Api-Version: 2022-11-28" \
 		"$UPLOAD_URL" \
-		-d "$PAYLOAD") || {
+		-d @"$PAYLOAD_FILE") || {
 		echo "[gist] Upload failed."
+		rm -f "$PAYLOAD_FILE"
 		return 0
 	}
+	rm -f "$PAYLOAD_FILE"
 
 	GIST_URL=$(echo "$RESPONSE" | jq -r '.html_url // empty')
 	if [ -n "$GIST_URL" ]; then
@@ -142,6 +162,7 @@ upload_gist_if_needed() {
 	else
 		echo "[gist] Upload finished, but no html_url returned."
 	fi
+	rm -f "$FILTERED_FILE"
 	return 0
 }
 
